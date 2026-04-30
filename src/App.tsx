@@ -275,7 +275,7 @@ function App() {
           </div>
 
           {/* Row 2: OSC ADDRESS / ARGS */}
-          <span className="form-label" style={{ color: "var(--accent-color)", paddingBottom: "4px" }}>OSC</span>
+          <span className="form-label" style={{ color: "var(--osc-color)", paddingBottom: "4px" }}>OSC</span>
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
             <span style={{ fontSize: "0.55rem", color: "var(--text-secondary)" }}>ADDRESS</span>
             <input className="form-input" placeholder="/cue/1" value={formOscAddr} onChange={e => setFormOscAddr(e.target.value)} />
@@ -442,8 +442,8 @@ function HotcueRow({ trigger: t, fired, onUpdate, onDelete }: HotcueRowProps) {
     <div style={{ display: "grid", gridTemplateColumns: "70px 80px 1fr 70px 40px 35px 35px 35px 16px", gap: "4px", padding: "2px 0", borderBottom: "1px solid #111", alignItems: "center", transition: "background 0.1s", background: fired ? "rgba(0,255,120,0.15)" : "transparent", borderRadius: fired ? "3px" : "0" }}>
       <TextCell   field="name"       value={t.name}                            color="#fff"                  placeholder="Name" />
       <TextCell   field="timestamp"  value={t.timestamp}                       color="var(--text-secondary)" placeholder="00:00:00:00" />
-      <TextCell   field="osc_addr"   value={t.osc?.address || ""}              color="var(--accent-color)"   placeholder="/address" />
-      <TextCell   field="osc_args"   value={t.osc?.args.join(" ") || ""}       color="var(--accent-color)"   placeholder="args" />
+      <TextCell   field="osc_addr"   value={t.osc?.address || ""}              color="var(--osc-color)"   placeholder="/address" />
+      <TextCell   field="osc_args"   value={t.osc?.args.join(" ") || ""}       color="var(--osc-color)"   placeholder="args" />
       <SelectCell field="midi_type"  value={t.midi?.msg_type || ""}            color="#ff6b9d" options={TYPE_OPTIONS} />
       <SelectCell field="midi_note"  value={t.midi?.note.toString()     ?? ""} color="#ff6b9d" options={NOTE_OPTIONS} />
       <SelectCell field="midi_vel"   value={t.midi?.velocity.toString() ?? ""} color="#ff6b9d" options={VEL_OPTIONS} />

@@ -1,12 +1,15 @@
 :root {
-  --bg-color: #0a0a0a;
-  --panel-bg: #141414;
+  --bg-color: #000000;
+  --panel-bg: #000000;
+  --input-bg: #0d0d0d;
   --accent-color: #00d4ff;
+  --osc-color: #00e676;
   --success-color: #00ff88;
   --warning-color: #ffaa00;
   --text-primary: #ffffff;
-  --text-secondary: #888888;
-  --border-color: #222222;
+  --text-secondary: #666666;
+  --border-color: #1e1e1e;
+  --border-strong: #2e2e2e;
 }
 
 * {
@@ -29,12 +32,12 @@ body {
   min-height: 100vh;
   height: 100vh;
   padding: 8px;
-  gap: 8px;
+  gap: 6px;
 }
 
 .panel {
   background: var(--panel-bg);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-strong);
   padding: 10px;
 }
 
@@ -97,7 +100,7 @@ body {
 .settings-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 
 .controls-header {
@@ -131,7 +134,7 @@ body {
 
 .form-select, .form-input {
   width: 100%;
-  background: #000;
+  background: var(--input-bg);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   padding: 4px 6px;
@@ -144,29 +147,33 @@ body {
 
 .form-select {
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='%23888' d='M0 2l4 4 4-4z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='%23555' d='M0 2l4 4 4-4z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
+  background-color: var(--input-bg);
   padding-right: 24px;
 }
 
 .form-select:focus, .form-input:focus {
-  border-color: var(--accent-color);
+  border-color: var(--border-strong);
+  outline: none;
 }
 
 .btn {
-  background: var(--accent-color);
-  color: #000;
-  border: none;
+  background: transparent;
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
   padding: 4px 8px;
   font-size: 0.65rem;
   font-weight: 700;
   cursor: pointer;
   text-transform: uppercase;
+  letter-spacing: 0.05rem;
 }
 
 .btn:hover {
-  filter: brightness(1.1);
+  background: var(--accent-color);
+  color: #000;
 }
 
 .status-info {
