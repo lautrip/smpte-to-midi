@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./index.css";
@@ -39,6 +39,8 @@ function App() {
   const [formMidiCh, setFormMidiCh] = useState("0");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [firedIds, setFiredIds] = useState<Set<string>>(new Set());
+  const [lastFiredName, setLastFiredName] = useState<string | null>(null);
+  const triggersRef = useRef<Trigger[]>([]);
 
   const fetchDevices = async () => {
     try {
@@ -51,6 +53,7 @@ function App() {
     try {
       const list = await invoke<Trigger[]>("get_triggers");
       setTriggers(list);
+      triggersRef.current = list;
     } catch (e) { console.error(e); }
   };
 
@@ -75,6 +78,8 @@ function App() {
     const unlistenStatus  = listen<string>("status",         (event) => setStatus(event.payload));
     const unlistenFired   = listen<string>("trigger_fired",  (event) => {
       const id = event.payload;
+      const name = triggersRef.current.find(t => t.id === id)?.name ?? null;
+      setLastFiredName(name);
       setFiredIds(prev => new Set(prev).add(id));
       setTimeout(() => setFiredIds(prev => { const s = new Set(prev); s.delete(id); return s; }), 600);
     });
@@ -196,6 +201,11 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Last fired hotcue name banner */}
+      <div style={{ textAlign: "center", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: lastFiredName ? "var(--success-color)" : "#2a2a2a", transition: "color 0.3s", height: "14px", lineHeight: "14px" }}>
+        {lastFiredName ?? "—"}
+      </div>
+
       <div className={`panel timecode-container ${status === 'LOCKED' ? 'status-locked' : status === 'FREEWHEELING' ? 'status-freewheel' : 'status-nosignal'}`}>
         <div className="status-bar" style={{ backgroundColor: status === 'LOCKED' ? 'var(--success-color)' : status === 'FREEWHEELING' ? 'var(--warning-color)' : '#444', color: '#000' }}>
           {status}
