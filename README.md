@@ -1,36 +1,36 @@
 # smpte-to-midi
 
-Decodificador de LTC (SMPTE) a MIDI y OSC desarrollado con Tauri. Permite disparar eventos en tiempos específicos basados en una entrada de audio con código de tiempo.
+LTC (SMPTE) to MIDI and OSC decoder built with Tauri. It allows triggering events at specific times based on an LTC audio input.
 
-## Requisitos
+## Requirements
 
-- Rust y Cargo
-- Node.js y npm
+- Rust and Cargo
+- Node.js and npm
 
-## Instalación
+## Installation
 
-1. Clonar el repositorio.
-2. Instalar las dependencias de Node:
+1. Clone the repository.
+2. Install dependencies:
    ```bash
    npm install
    ```
 
-## Uso
+## Usage
 
-Para ejecutar la aplicación en modo desarrollo:
+Run development mode:
 ```bash
 npm run tauri dev
 ```
 
-Para compilar la versión de producción:
+Build production version:
 ```bash
 npm run tauri build
 ```
 
-## Características
+## Features
 
-- Decodificación de audio LTC en tiempo real.
-- Soporte para múltiples frame rates (23.976, 24, 25, 29.97, 30).
-- Envío de mensajes MIDI (Note, CC) y OSC.
-- Gestión de hotcues (triggers) con edición inline estilo Excel.
-- Importación y exportación de configuraciones.
+- Real-time LTC audio decoding.
+- Supports multiple frame rates (23.976, 24, 25, 29.97, 30).
+- Sends MIDI (Note, CC) and OSC messages.
+- Hotcue management with Excel-style inline editing.
+- Settings import and export.
