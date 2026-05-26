@@ -25,16 +25,24 @@ pub fn run() {
             settings_manager::import_hotcues,
             midi_sender::get_midi_outputs,
             trigger_manager::set_midi_output,
+            settings_manager::set_always_on_top,
         ])
         .setup(|app| {
             let settings = settings_manager::load_settings(app.handle());
+            
+            // Apply always on top from settings
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_always_on_top(settings.always_on_top);
+            }
             
             // Sync states with settings
             {
                 let trigger_state = app.state::<trigger_manager::TriggerState>();
                 *trigger_state.fps.lock().unwrap() = settings.fps;
                 *trigger_state.global_osc_target.lock().unwrap() = settings.osc_target.clone();
-                *trigger_state.triggers.lock().unwrap() = settings.triggers;
+                let mut sorted_triggers = settings.triggers.clone();
+                sorted_triggers.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+                *trigger_state.triggers.lock().unwrap() = sorted_triggers;
             }
 
             // Initialize MIDI with saved device

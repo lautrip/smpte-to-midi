@@ -111,6 +111,8 @@ fn save_triggers_to_settings(app: &AppHandle, triggers: Vec<Trigger>) {
 pub fn add_trigger(trigger: Trigger, state: tauri::State<TriggerState>, app: AppHandle) {
     let mut triggers = state.triggers.lock().unwrap();
     triggers.push(trigger);
+    // Sort by timestamp
+    triggers.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
     save_triggers_to_settings(&app, triggers.clone());
 }
 
@@ -126,6 +128,8 @@ pub fn update_trigger(trigger: Trigger, state: tauri::State<TriggerState>, app: 
     let mut triggers = state.triggers.lock().unwrap();
     if let Some(pos) = triggers.iter().position(|t| t.id == trigger.id) {
         triggers[pos] = trigger;
+        // Sort by timestamp
+        triggers.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
         save_triggers_to_settings(&app, triggers.clone());
     }
 }

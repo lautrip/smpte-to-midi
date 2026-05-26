@@ -27,8 +27,9 @@ function App() {
   const [triggers, setTriggers] = useState<Trigger[]>([]);
   const [midiDevices, setMidiDevices] = useState<string[]>([]);
   const [selectedMidi, setSelectedMidi] = useState("");
-
-  // Form State
+  const [alwaysOnTop, setAlwaysOnTop] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, trigger: Trigger } | null>(null);
+  const triggersRef = useRef<Trigger[]>([]);
   const [formName, setFormName] = useState("");
   const [formTime, setFormTime] = useState("");
   const [formOscAddr, setFormOscAddr] = useState("");
@@ -40,7 +41,6 @@ function App() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [firedIds, setFiredIds] = useState<Set<string>>(new Set());
   const [lastFiredName, setLastFiredName] = useState<string | null>(null);
-  const triggersRef = useRef<Trigger[]>([]);
 
   const fetchDevices = async () => {
     try {
@@ -71,6 +71,7 @@ function App() {
     setSelectedChannel(settings.channel_index);
     setSelectedMidi(settings.midi_device_name);
     setTriggers(settings.triggers || []);
+    setAlwaysOnTop(settings.always_on_top || false);
   };
 
   useEffect(() => {
@@ -122,6 +123,11 @@ function App() {
     await invoke("set_midi_output", { name });
   };
 
+  const handleAlwaysOnTop = async (val: boolean) => {
+    setAlwaysOnTop(val);
+    await invoke("set_always_on_top", { always: val });
+  };
+
   const resetForm = () => {
     setFormName("");
     setFormTime("");
@@ -153,7 +159,7 @@ function App() {
         msg_type: formMidiType, 
         note: parseInt(formMidiNote), 
         velocity: parseInt(formMidiVel) || 100, 
-        channel: parseInt(formMidiCh) || 0 
+        channel: (parseInt(formMidiCh) || 1) - 1 
       } : null,
     };
 
@@ -166,7 +172,7 @@ function App() {
     fetchTriggers();
   };
 
-  const startEdit = (t: Trigger) => {
+  const handleEdit = (t: Trigger) => {
     setEditingId(t.id);
     setFormName(t.name);
     setFormTime(t.timestamp);
@@ -175,7 +181,19 @@ function App() {
     setFormMidiType(t.midi?.msg_type || "Note");
     setFormMidiNote(t.midi?.note.toString() || "");
     setFormMidiVel(t.midi?.velocity.toString() || "100");
-    setFormMidiCh(t.midi?.channel.toString() || "0");
+    setFormMidiCh(( (t.midi?.channel ?? 0) + 1).toString());
+    
+    // Scroll to top to see the form
+    window.scrollTo(0, 0);
+  };
+
+  const handleDuplicate = async (t: Trigger) => {
+    const copy: Trigger = JSON.parse(JSON.stringify(t));
+    copy.id = Math.random().toString(36).substr(2, 9);
+    copy.name = `${t.name} (copy)`;
+    await invoke("add_trigger", { trigger: copy });
+    fetchTriggers();
+    setContextMenu(null);
   };
 
   const handleExport = async () => {
@@ -261,6 +279,10 @@ function App() {
               {midiDevices.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
+          <div className="form-group" style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+            <label className="form-label" style={{ marginBottom: 0, cursor: "pointer" }}>Always on Top</label>
+            <input type="checkbox" checked={alwaysOnTop} onChange={(e) => handleAlwaysOnTop(e.target.checked)} style={{ cursor: "pointer" }} />
+          </div>
         </div>
       </div>
 
@@ -332,18 +354,47 @@ function App() {
         {/* Hotcue Table — Excel-style inline editing */}
         <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "4px", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
           {/* Column headers */}
-          <div style={{ display: "grid", gridTemplateColumns: "70px 80px 1fr 70px 40px 35px 35px 28px 16px", gap: "4px", padding: "2px 0 4px", marginBottom: "2px", borderBottom: "1px solid #2a2a2a" }}>
-            {["NAME","TIME","OSC ADDR","OSC ARGS","MIDI TYPE","NOTE","VEL","CH",""].map((h, i) => (
+          <div style={{ display: "grid", gridTemplateColumns: "70px 80px 1fr 70px 40px 35px 35px 35px 20px 20px", gap: "4px", padding: "2px 0 4px", marginBottom: "2px", borderBottom: "1px solid #2a2a2a" }}>
+            {["NAME","TIME","OSC ADDR","OSC ARGS","MIDI TYPE","NOTE","VEL","CH","",""].map((h, i) => (
               <span key={i} style={{ fontSize: "0.5rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</span>
             ))}
           </div>
 
           <div style={{ overflowY: "auto", flex: 1 }}>
             {triggers.length === 0 && <p style={{ fontSize: "0.6rem", color: "var(--text-secondary)", padding: "4px 0" }}>No hotcues. Use the form above to add one.</p>}
-            {triggers.map(t => <HotcueRow key={t.id} trigger={t} fired={firedIds.has(t.id)} onUpdate={async (updated) => { await invoke("update_trigger", { trigger: updated }); fetchTriggers(); }} onDelete={async () => { await invoke("remove_trigger", { id: t.id }); fetchTriggers(); }} />)}
+            {triggers.map(t => <HotcueRow key={t.id} trigger={t} fired={firedIds.has(t.id)} 
+              onUpdate={async (updated) => { await invoke("update_trigger", { trigger: updated }); fetchTriggers(); }} 
+              onEdit={() => handleEdit(t)} 
+              onDelete={async () => { await invoke("remove_trigger", { id: t.id }); fetchTriggers(); }} 
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenu({ x: e.clientX, y: e.clientY, trigger: t });
+              }}
+            />)}
           </div>
         </div>
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <>
+          <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 998 }} onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
+          <div style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x, background: "#1a1a1a", border: "1px solid #333", borderRadius: "4px", padding: "4px 0", zIndex: 999, boxShadow: "0 4px 12px rgba(0,0,0,0.5)", minWidth: "120px" }}>
+            <div className="ctx-item" style={{ padding: "6px 12px", fontSize: "0.7rem", cursor: "pointer", color: "#fff", transition: "background 0.1s" }} 
+              onMouseEnter={(e) => e.currentTarget.style.background = "#333"} 
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+              onClick={() => handleDuplicate(contextMenu.trigger)}>
+              Duplicate Hotcue
+            </div>
+            <div className="ctx-item" style={{ padding: "6px 12px", fontSize: "0.7rem", cursor: "pointer", color: "#ff4444", transition: "background 0.1s", borderTop: "1px solid #222" }} 
+              onMouseEnter={(e) => e.currentTarget.style.background = "#333"} 
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+              onClick={async () => { await invoke("remove_trigger", { id: contextMenu.trigger.id }); fetchTriggers(); setContextMenu(null); }}>
+              Delete
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -354,7 +405,9 @@ interface HotcueRowProps {
   trigger: Trigger;
   fired: boolean;
   onUpdate: (t: Trigger) => void;
+  onEdit: () => void;
   onDelete: () => void;
+  onContextMenu: (e: React.MouseEvent) => void;
 }
 
 // Pre-generate option arrays once
@@ -363,7 +416,7 @@ const VEL_OPTIONS   = Array.from({ length: 128 }, (_, i) => ({ val: String(i), l
 const CH_OPTIONS    = Array.from({ length: 16  }, (_, i) => ({ val: String(i), label: `Ch ${i + 1}` }));
 const TYPE_OPTIONS  = [{ val: "", label: "—" }, { val: "Note", label: "Note" }, { val: "CC", label: "CC" }];
 
-function HotcueRow({ trigger: t, fired, onUpdate, onDelete }: HotcueRowProps) {
+function HotcueRow({ trigger: t, fired, onUpdate, onEdit, onDelete, onContextMenu }: HotcueRowProps) {
   const [editField, setEditField] = useState<string | null>(null);
   const [editVal,   setEditVal  ] = useState("");
 
@@ -449,7 +502,7 @@ function HotcueRow({ trigger: t, fired, onUpdate, onDelete }: HotcueRowProps) {
   };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "70px 80px 1fr 70px 40px 35px 35px 35px 16px", gap: "4px", padding: "2px 0", borderBottom: "1px solid #111", alignItems: "center", transition: "background 0.1s", background: fired ? "rgba(0,255,120,0.15)" : "transparent", borderRadius: fired ? "3px" : "0" }}>
+    <div onContextMenu={onContextMenu} style={{ display: "grid", gridTemplateColumns: "70px 80px 1fr 70px 40px 35px 35px 35px 20px 20px", gap: "4px", padding: "2px 0", borderBottom: "1px solid #111", alignItems: "center", transition: "background 0.1s", background: fired ? "rgba(0,255,120,0.15)" : "transparent", borderRadius: fired ? "3px" : "0" }}>
       <TextCell   field="name"       value={t.name}                            color="#fff"                  placeholder="Name" />
       <TextCell   field="timestamp"  value={t.timestamp}                       color="var(--text-secondary)" placeholder="00:00:00:00" />
       <TextCell   field="osc_addr"   value={t.osc?.address || ""}              color="var(--osc-color)"   placeholder="/address" />
@@ -458,7 +511,8 @@ function HotcueRow({ trigger: t, fired, onUpdate, onDelete }: HotcueRowProps) {
       <SelectCell field="midi_note"  value={t.midi?.note.toString()     ?? ""} color="#ff6b9d" options={NOTE_OPTIONS} />
       <SelectCell field="midi_vel"   value={t.midi?.velocity.toString() ?? ""} color="#ff6b9d" options={VEL_OPTIONS} />
       <SelectCell field="midi_ch"    value={t.midi?.channel.toString()  ?? ""} color="#ff6b9d" options={CH_OPTIONS} />
-      <span style={{ color: "#ff4444", fontSize: "0.6rem", cursor: "pointer", textAlign: "center" }} onClick={onDelete}>✕</span>
+      <span style={{ color: "var(--osc-color)", fontSize: "0.7rem", cursor: "pointer", textAlign: "center" }} onClick={onEdit} title="Edit in form">✎</span>
+      <span style={{ color: "#ff4444", fontSize: "0.6rem", cursor: "pointer", textAlign: "center" }} onClick={onDelete} title="Delete">✕</span>
     </div>
   );
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Esta aplicación requiere acceso a la entrada de audio para decodificar la señal SMPTE/LTC y sincronizar el Timecode.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Esta aplicación requiere acceso a la red local para enviar y recibir mensajes OSC.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Esta aplicación requiere acceso a Bluetooth para la conexión de dispositivos MIDI inalámbricos.</string>
+</dict>
+</plist>

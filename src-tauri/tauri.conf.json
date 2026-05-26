@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-app",
+  "productName": "SMPTE to MIDI",
   "version": "0.1.0",
-  "identifier": "com.ltr.tauri-app",
+  "identifier": "com.ltr.smpte-to-midi",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -33,6 +33,9 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "macOS": {
+      "infoPlist": "Info.plist"
+    }
   }
 }

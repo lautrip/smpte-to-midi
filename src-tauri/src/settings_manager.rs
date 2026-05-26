@@ -19,6 +19,8 @@ pub struct AppSettings {
     pub midi_device_name: String,
     #[serde(default)]
     pub triggers: Vec<Trigger>,
+    #[serde(default)]
+    pub always_on_top: bool,
 }
 
 fn default_fps() -> f32 { 25.0 }
@@ -34,6 +36,7 @@ impl Default for AppSettings {
             osc_target: "127.0.0.1:8000".to_string(),
             midi_device_name: "Virtual: SMPTE-to-MIDI".to_string(),
             triggers: Vec::new(),
+            always_on_top: false,
         }
     }
 }
@@ -67,6 +70,19 @@ pub fn save_settings(app: &AppHandle, settings: &AppSettings) {
 #[tauri::command]
 pub fn get_settings(app: AppHandle) -> AppSettings {
     load_settings(&app)
+}
+
+#[tauri::command]
+pub fn set_always_on_top(app: AppHandle, always: bool) -> Result<(), String> {
+    let mut settings = load_settings(&app);
+    settings.always_on_top = always;
+    save_settings(&app, &settings);
+    
+    // Apply to main window
+    if let Some(window) = app.get_webview_window("main") {
+        window.set_always_on_top(always).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 // ── CSV Export / Import (Hotcues only) ────────────────────────────────────────
@@ -169,11 +185,14 @@ pub fn import_hotcues(app: AppHandle) -> Result<Vec<Trigger>, String> {
         .pick_file();
     if let Some(path) = path {
         let data = fs::read_to_string(path).map_err(|e| e.to_string())?;
-        let triggers = csv_to_triggers(&data)?;
+        let mut triggers = csv_to_triggers(&data)?;
+        // Sort by timestamp
+        triggers.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
         // Persist imported hotcues into settings
         let mut settings = load_settings(&app);
         settings.triggers = triggers.clone();
         save_settings(&app, &settings);
+        // Also update the live state if possible, or just return them
         Ok(triggers)
     } else {
         Err("Import cancelled".into())
